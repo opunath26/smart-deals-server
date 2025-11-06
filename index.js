@@ -30,10 +30,22 @@ async function run() {
 
         const db = client.db('smart_db');
         const productsCollection = db.collection('products');
+        const bidsCollection = db.collection('bids');
 
 
         app.get('/products', async (req, res) => {
-            const cursor = productsCollection.find();
+            // const projectFields = { title: 1, price_min: 1, price_max: 1, image: 1 }
+            // const cursor = productsCollection.find().sort({price_min: -1}).skip(2).limit(5).project(projectFields);
+
+            console.log(req.query);
+            const email = req.query.email;
+            const query = {}
+            if (email) {
+                query.email = email;
+            }
+
+
+            const cursor = productsCollection.find(query);
             const result = await cursor.toArray();
             res.send(result);
         })
@@ -74,6 +86,40 @@ async function run() {
             res.send(result);
         })
 
+        // bids related apis
+        app.get('/bids', async (req, res) => {
+
+            const email = req.query.email;
+            const query = {};
+            if (email) {
+                query.buyer_email = email;
+            }
+
+
+            const cursor = bidsCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
+        app.post('/bids', async (req, res) => {
+            const newBid = req.body;
+            const result = await bidsCollection.insertOne(newBid);
+            res.send(result);
+        })
+
+        app.get('/bids/:id', async (req, res) => {
+            const id = req.params.id; 
+            const query = { _id: new ObjectId(id) }; 
+            const result = await bidsCollection.findOne(query);
+            res.send(result);
+        })
+
+        app.delete('/bids/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await bidsCollection.deleteOne(query);
+            res.send(result);
+        })
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
@@ -90,11 +136,3 @@ app.listen(port, () => {
     console.log(`smart server is running on port ${port}`)
 })
 
-// client.connect()
-// .then(() => {
-//     app.listen(port, () => {
-//      console.log(`smart server is running on port ${port}`)
-//     })
-
-// })
-// .catch(console.dir)
