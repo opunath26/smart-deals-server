@@ -31,6 +31,24 @@ async function run() {
         const db = client.db('smart_db');
         const productsCollection = db.collection('products');
         const bidsCollection = db.collection('bids');
+        const usersCollection = db.collection('users')
+
+        app.post('/users', async (req, res) => {
+            const newUser = req.body;
+            console.log('New user received:', newUser);
+
+            const email = req.body.email;
+            const query = { email: email }
+            const existingUser = await usersCollection.findOne(query)
+            if (existingUser) {
+                res.send({message: 'user already exits. do not need to insert again', insertedId: null })
+            }
+            else {
+                const result = await usersCollection.insertOne(newUser);
+                res.send({ message: 'User added successfully', insertedId: result.insertedId });
+            }
+
+        })
 
 
         app.get('/products', async (req, res) => {
@@ -108,8 +126,8 @@ async function run() {
         })
 
         app.get('/bids/:id', async (req, res) => {
-            const id = req.params.id; 
-            const query = { _id: new ObjectId(id) }; 
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
             const result = await bidsCollection.findOne(query);
             res.send(result);
         })
